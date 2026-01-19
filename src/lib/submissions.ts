@@ -5,7 +5,6 @@ import {
   getDocs, 
   query, 
   orderBy, 
-  limit,
   serverTimestamp,
   runTransaction,
   onSnapshot,

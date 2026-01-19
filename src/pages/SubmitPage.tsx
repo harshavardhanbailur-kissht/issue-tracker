@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSimpleAuth } from '@/contexts/SimpleAuthContext';
 import { createSubmission } from '@/lib/submissions';
@@ -15,7 +14,6 @@ const ACTIONABLE_OPTIONS = [
 
 export default function SubmitPage() {
   const { role } = useSimpleAuth();
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<SubmissionFormData>({
