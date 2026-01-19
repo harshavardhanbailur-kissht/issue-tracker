@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /submissions/{submissionId} {
+      // Allow all reads and creates (simple auth handled in app)
+      // In production, you may want to add Firebase Auth or stricter rules
+      allow read, create: if true;
+      
+      // No updates or deletes for now
+      allow update, delete: if false;
+    }
+    
+    match /counters/{counterId} {
+      // Allow access for ID generation (handled in app with transactions)
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /submissions/{submissionId}/{allPaths=**} {
+      // Allow all reads and writes (simple auth handled in app)
+      // In production, you may want to add Firebase Auth or stricter rules
+      allow read, write: if true;
+    }
+  }
+}
