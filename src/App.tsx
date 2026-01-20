@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { SimpleAuthProvider, useSimpleAuth } from '@/contexts/SimpleAuthContext';
+import { GoogleDriveProvider } from '@/contexts/GoogleDriveContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Layout } from '@/components/Layout';
 import LoginPage from '@/pages/LoginPage';
@@ -74,7 +75,9 @@ function AppRoutes() {
 function App() {
   return (
     <SimpleAuthProvider>
-      <AppRoutes />
+      <GoogleDriveProvider>
+        <AppRoutes />
+      </GoogleDriveProvider>
     </SimpleAuthProvider>
   );
 }

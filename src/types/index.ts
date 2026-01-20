@@ -8,7 +8,8 @@ export interface Submission {
   detailedActionable: string; // Text description
   lsqLink: string; // URL
   urn: string; // Applicant/Co-Applicant URN
-  attachmentUrl?: string; // Firebase Storage URL
+  attachmentUrl?: string; // Google Drive shareable URL or Firebase Storage URL
+  attachmentDriveId?: string; // Google Drive file ID
   comments?: string; // Optional remarks
   submittedBy: UserRole;
   submittedAt: Timestamp;

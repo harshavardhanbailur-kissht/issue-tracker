@@ -10,8 +10,8 @@ import {
   onSnapshot,
   setDoc,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db } from './firebase';
+import { uploadFileToDrive, type UploadProgress } from './googleDrive';
 import type { Submission, SubmissionFormData, UserRole } from '@/types';
 
 const SUBMISSIONS_COLLECTION = 'submissions';
@@ -41,31 +41,28 @@ async function generateSubmissionId(): Promise<string> {
 }
 
 /**
- * Upload attachment to Firebase Storage
- */
-async function uploadAttachment(file: File, submissionId: string): Promise<string> {
-  const extension = file.name.split('.').pop() || 'bin';
-  const filename = `${Date.now()}.${extension}`;
-  const storageRef = ref(storage, `submissions/${submissionId}/${filename}`);
-  
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
-}
-
-/**
- * Create a new submission
+ * Create a new submission with Google Drive upload
  */
 export async function createSubmission(
   data: SubmissionFormData,
-  role: UserRole
+  role: UserRole,
+  onUploadProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
-  // Generate submission ID
+  // Generate submission ID first (needed for folder name)
   const submissionId = await generateSubmissionId();
   
-  // Upload attachment if provided
+  // Upload attachment to Google Drive if provided
   let attachmentUrl: string | undefined;
+  let attachmentDriveId: string | undefined;
+  
   if (data.attachmentFile) {
-    attachmentUrl = await uploadAttachment(data.attachmentFile, submissionId);
+    const uploadResult = await uploadFileToDrive(
+      data.attachmentFile,
+      submissionId,
+      onUploadProgress
+    );
+    attachmentUrl = uploadResult.shareableUrl;
+    attachmentDriveId = uploadResult.fileId;
   }
   
   // Create submission document
@@ -79,6 +76,7 @@ export async function createSubmission(
     lsqLink: data.lsqLink,
     urn: data.urn,
     attachmentUrl,
+    attachmentDriveId,
     comments: data.comments,
     submittedBy: role,
     createdAt: serverTimestamp(),

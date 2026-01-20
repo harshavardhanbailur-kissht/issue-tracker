@@ -155,19 +155,22 @@ export default function SubmissionDetailPage() {
                 href={submission.attachmentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 underline"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
               >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12c6.627 0 12-5.373 12-12S18.627 0 12 0zm.14 19.018c-3.868 0-7-3.14-7-7.018 0-3.878 3.132-7.018 7-7.018 1.89 0 3.47.697 4.682 1.829l-1.974 1.978v-.004c-.735-.702-1.667-1.062-2.708-1.062-2.31 0-4.187 1.956-4.187 4.273 0 2.315 1.877 4.277 4.187 4.277 2.096 0 3.522-1.202 3.816-2.852H12.14v-2.737h6.585c.088.47.135.96.135 1.474 0 4.01-2.677 6.86-6.72 6.86z"/>
                 </svg>
-                View Attachment
+                {submission.attachmentUrl.includes('drive.google.com') ? 'View in Google Drive' : 'View Attachment'}
               </a>
-              {submission.attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
+
+              {/* Inline preview for images (only for Firebase Storage URLs, not Google Drive) */}
+              {!submission.attachmentUrl.includes('drive.google.com') && 
+               submission.attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
                 <div className="mt-4">
                   <img
                     src={submission.attachmentUrl}
                     alt="Attachment"
-                    className="max-w-full rounded-lg border border-gray-200"
+                    className="max-w-full max-h-96 rounded-lg border border-gray-200"
                   />
                 </div>
               )}
