@@ -35,7 +35,7 @@ export default function LoginPage() {
 
     if (success) {
       // Redirect based on role
-      if (selectedRole === 'sales_manager') {
+      if (selectedRole === 'product_support') {
         navigate('/submit');
       } else {
         navigate('/submissions');
@@ -70,21 +70,6 @@ export default function LoginPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => handleRoleSelect('sales_manager')}
-                  className={`
-                    p-4 rounded-xl border-2 transition-all text-left
-                    ${selectedRole === 'sales_manager'
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <div className="font-semibold text-gray-900 mb-1">Sales Manager</div>
-                  <div className="text-xs text-gray-500">Submit forms</div>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => handleRoleSelect('product_support')}
                   className={`
                     p-4 rounded-xl border-2 transition-all text-left
@@ -95,6 +80,21 @@ export default function LoginPage() {
                   `}
                 >
                   <div className="font-semibold text-gray-900 mb-1">Product Support</div>
+                  <div className="text-xs text-gray-500">Submit forms</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRoleSelect('tech_support_team')}
+                  className={`
+                    p-4 rounded-xl border-2 transition-all text-left
+                    ${selectedRole === 'tech_support_team'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <div className="font-semibold text-gray-900 mb-1">Tech Support Team</div>
                   <div className="text-xs text-gray-500">View submissions</div>
                 </button>
               </div>

@@ -24,7 +24,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try {
         const { role: storedRole } = JSON.parse(stored);
-        if (storedRole === 'sales_manager' || storedRole === 'product_support') {
+        if (storedRole === 'product_support' || storedRole === 'tech_support_team') {
           setRole(storedRole);
           setIsAuthenticated(true);
         }

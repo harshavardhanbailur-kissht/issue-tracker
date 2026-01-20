@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type UserRole = 'sales_manager' | 'product_support';
+export type UserRole = 'product_support' | 'tech_support_team';
 
 export interface Submission {
   id: string; // SUB-0001 format

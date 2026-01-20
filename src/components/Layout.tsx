@@ -14,8 +14,8 @@ export function Layout({ children }: LayoutProps) {
   };
 
   const navItems = [
-    { path: '/submit', label: 'Submit Form', icon: '📝', show: role === 'sales_manager' },
-    { path: '/submissions', label: 'View Submissions', icon: '📋', show: role === 'product_support' },
+    { path: '/submit', label: 'Submit Form', icon: '📝', show: role === 'product_support' },
+    { path: '/submissions', label: 'View Submissions', icon: '📋', show: role === 'tech_support_team' },
   ].filter(item => item.show);
 
   const isActive = (path: string) => location.pathname === path;
@@ -27,7 +27,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to={role === 'sales_manager' ? '/submit' : '/submissions'} className="flex items-center gap-2">
+            <Link to={role === 'product_support' ? '/submit' : '/submissions'} className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                 <span className="text-white font-bold text-lg">I</span>
               </div>
@@ -56,7 +56,7 @@ export function Layout({ children }: LayoutProps) {
               {/* User info */}
               <div className="flex items-center gap-3 ml-4 pl-4 border-l border-gray-200">
                 <span className="text-sm text-gray-600 capitalize">
-                  {role?.replace('_', ' ')}
+                  {role?.replace(/_/g, ' ')}
                 </span>
                 <button
                   onClick={handleLogout}

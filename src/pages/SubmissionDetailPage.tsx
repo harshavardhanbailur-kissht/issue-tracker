@@ -96,7 +96,7 @@ export default function SubmissionDetailPage() {
           <div>
             <label className="text-sm font-medium text-gray-500">Submitted By</label>
             <p className="mt-1 text-sm text-gray-900 capitalize">
-              {submission.submittedBy.replace('_', ' ')}
+              {submission.submittedBy.replace(/_/g, ' ')}
             </p>
           </div>
           <div>

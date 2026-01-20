@@ -19,7 +19,7 @@ function AppRoutes() {
       <Route
         path="/submit"
         element={
-          <ProtectedRoute allowedRoles={['sales_manager']}>
+          <ProtectedRoute allowedRoles={['product_support']}>
             <Layout>
               <SubmitPage />
             </Layout>
@@ -30,7 +30,7 @@ function AppRoutes() {
       <Route
         path="/submissions"
         element={
-          <ProtectedRoute allowedRoles={['product_support']}>
+          <ProtectedRoute allowedRoles={['tech_support_team']}>
             <Layout>
               <SubmissionsListPage />
             </Layout>
@@ -41,7 +41,7 @@ function AppRoutes() {
       <Route
         path="/submissions/:id"
         element={
-          <ProtectedRoute allowedRoles={['product_support']}>
+          <ProtectedRoute allowedRoles={['tech_support_team']}>
             <Layout>
               <SubmissionDetailPage />
             </Layout>
@@ -54,7 +54,7 @@ function AppRoutes() {
         path="/"
         element={
           isAuthenticated ? (
-            role === 'sales_manager' ? (
+            role === 'product_support' ? (
               <Navigate to="/submit" replace />
             ) : (
               <Navigate to="/submissions" replace />
