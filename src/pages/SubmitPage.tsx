@@ -186,10 +186,7 @@ export default function SubmitPage() {
       return;
     }
 
-    if (!formData.attachmentFiles || formData.attachmentFiles.length === 0) {
-      toast.error('Please attach at least one file');
-      return;
-    }
+    // Attachments are optional - no validation needed
 
     if (!role) {
       toast.error('You must be logged in');
@@ -348,7 +345,7 @@ export default function SubmitPage() {
           {/* Attachments */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Attachments <span className="text-red-500">*</span>
+              Attachments <span className="text-gray-400">(optional)</span>
             </label>
             
             {/* File List */}
@@ -451,7 +448,6 @@ export default function SubmitPage() {
               multiple
               onChange={handleFileChange}
               className="hidden"
-              required={!formData.attachmentFiles || formData.attachmentFiles.length === 0}
             />
           </div>
 
