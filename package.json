@@ -18,7 +18,9 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
     "react-hot-toast": "^2.4.1",
-    "date-fns": "^3.2.0"
+    "date-fns": "^3.2.0",
+    "googleapis": "^170.1.0",
+    "@vercel/node": "^5.5.25"
   },
   "devDependencies": {
     "@types/react": "^18.2.46",
