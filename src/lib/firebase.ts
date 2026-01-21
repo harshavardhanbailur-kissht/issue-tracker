@@ -16,12 +16,12 @@ import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
  * - etc.
  */
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_SENDER_ID",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCYrY93JMKuAol-m0bOpByeJNL89FDNE7Q",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "issue-tracker-app-1768880804.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "issue-tracker-app-1768880804",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "issue-tracker-app-1768880804.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "812642204688",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:812642204688:web:3e8cd05d798d54837fd73b",
 };
 
 // Initialize Firebase app (handle multiple initializations)
