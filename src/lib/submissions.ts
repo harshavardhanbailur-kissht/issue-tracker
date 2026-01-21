@@ -101,24 +101,31 @@ export async function createSubmission(
     }
   }
   
-  // Create submission document
-  const submissionData: Omit<Submission, 'createdAt' | 'submittedAt'> & { 
-    createdAt: ReturnType<typeof serverTimestamp>;
-    submittedAt: ReturnType<typeof serverTimestamp>;
-  } = {
+  // Create submission document - build object without undefined values
+  const submissionData: Record<string, any> = {
     id: submissionId,
     actionable: data.actionable,
     detailedActionable: data.detailedActionable,
     lsqLink: data.lsqLink,
     urn: data.urn,
-    ...(attachmentUrl && { attachmentUrl }),
-    ...(attachmentDriveId && { attachmentDriveId }),
-    ...(attachments && attachments.length > 0 && { attachments }),
-    ...(data.comments && { comments: data.comments }),
     submittedBy: role,
     createdAt: serverTimestamp(),
     submittedAt: serverTimestamp(),
   };
+  
+  // Only add attachment fields if they have values
+  if (attachmentUrl) {
+    submissionData.attachmentUrl = attachmentUrl;
+  }
+  if (attachmentDriveId) {
+    submissionData.attachmentDriveId = attachmentDriveId;
+  }
+  if (attachments && attachments.length > 0) {
+    submissionData.attachments = attachments;
+  }
+  if (data.comments) {
+    submissionData.comments = data.comments;
+  }
   
   const docRef = doc(db, SUBMISSIONS_COLLECTION, submissionId);
   await setDoc(docRef, submissionData);
@@ -188,11 +195,8 @@ export async function createLoanIssueSubmission(
     }
   }
   
-  // Create submission document with loan issue form data
-  const submissionData: Omit<Submission, 'createdAt' | 'submittedAt'> & { 
-    createdAt: ReturnType<typeof serverTimestamp>;
-    submittedAt: ReturnType<typeof serverTimestamp>;
-  } = {
+  // Create submission document with loan issue form data - build object without undefined values
+  const submissionData: Record<string, any> = {
     id: submissionId,
     formType: 'loan_issue',
     actionable: data.issueType, // Set actionable to issueType for display in list
@@ -206,10 +210,6 @@ export async function createLoanIssueSubmission(
     name: data.name,
     date: data.date,
     detailedActionable: data.notes || '', // Using notes as detailed actionable
-    ...(attachmentUrl && { attachmentUrl }),
-    ...(attachmentDriveId && { attachmentDriveId }),
-    ...(attachments && attachments.length > 0 && { attachments }),
-    ...(data.notes && { comments: data.notes }),
     recommendedAction: decisionResult.recommendedAction,
     reason: decisionResult.reason,
     nextSteps: decisionResult.nextSteps,
@@ -217,6 +217,20 @@ export async function createLoanIssueSubmission(
     createdAt: serverTimestamp(),
     submittedAt: serverTimestamp(),
   };
+  
+  // Only add attachment fields if they have values
+  if (attachmentUrl) {
+    submissionData.attachmentUrl = attachmentUrl;
+  }
+  if (attachmentDriveId) {
+    submissionData.attachmentDriveId = attachmentDriveId;
+  }
+  if (attachments && attachments.length > 0) {
+    submissionData.attachments = attachments;
+  }
+  if (data.notes) {
+    submissionData.comments = data.notes;
+  }
   
   const docRef = doc(db, SUBMISSIONS_COLLECTION, submissionId);
   await setDoc(docRef, submissionData);
