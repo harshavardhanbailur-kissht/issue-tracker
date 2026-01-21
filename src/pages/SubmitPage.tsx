@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useSimpleAuth } from '@/contexts/SimpleAuthContext';
-import { useGoogleDrive } from '@/contexts/GoogleDriveContext';
 import { createSubmission } from '@/lib/submissions';
-import { validateFileSize, formatFileSize, type UploadProgress } from '@/lib/googleDrive';
+import { validateTotalFileSize, formatFileSize, type UploadProgress } from '@/lib/driveUpload';
 import type { SubmissionFormData } from '@/types';
 
 const ACTIONABLE_OPTIONS = [
@@ -16,7 +15,6 @@ const ACTIONABLE_OPTIONS = [
 
 export default function SubmitPage() {
   const { role } = useSimpleAuth();
-  const { isSignedIn, isLoading: isGoogleLoading, signIn, error: googleError } = useGoogleDrive();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<SubmissionFormData>({
@@ -24,10 +22,10 @@ export default function SubmitPage() {
     detailedActionable: '',
     lsqLink: '',
     urn: '',
-    attachmentFile: undefined,
+    attachmentFiles: [],
     comments: '',
   });
-  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const [attachmentPreviews, setAttachmentPreviews] = useState<Map<string, string>>(new Map());
   const [fileSizeWarning, setFileSizeWarning] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
@@ -40,62 +38,133 @@ export default function SubmitPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processFiles = (newFiles: File[]) => {
     setFileSizeWarning(null);
 
-    if (file) {
-      // Validate file size (100 MB warning, 200 MB limit)
-      const validation = validateFileSize(file);
+    // Combine existing files with new files
+    const allFiles = [...(formData.attachmentFiles || []), ...newFiles];
 
-      if (!validation.valid) {
-        toast.error(validation.message!);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        return;
+    // Validate total file size (100 MB warning, 200 MB limit)
+    const validation = validateTotalFileSize(allFiles);
+
+    if (!validation.valid) {
+      toast.error(validation.message!);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
-
-      if (validation.warning) {
-        setFileSizeWarning(validation.message!);
-        toast(validation.message!, {
-          icon: '⚠️',
-          duration: 5000,
-          style: { background: '#FEF3C7', color: '#92400E' }
-        });
-      }
-
-      setFormData(prev => ({ ...prev, attachmentFile: file }));
-      setAttachmentPreview(URL.createObjectURL(file));
+      return;
     }
+
+    if (validation.warning) {
+      setFileSizeWarning(validation.message!);
+      toast(validation.message!, {
+        icon: '⚠️',
+        duration: 5000,
+        style: { background: '#FEF3C7', color: '#92400E' }
+      });
+    }
+
+    // Add new files to form data
+    setFormData(prev => ({ 
+      ...prev, 
+      attachmentFiles: allFiles 
+    }));
+
+    // Create previews for new files
+    const newPreviews = new Map(attachmentPreviews);
+    newFiles.forEach(file => {
+      const fileId = `${file.name}-${file.size}-${file.lastModified}`;
+      newPreviews.set(fileId, URL.createObjectURL(file));
+    });
+    setAttachmentPreviews(newPreviews);
   };
 
-  const removeAttachment = () => {
-    setFormData(prev => ({ ...prev, attachmentFile: undefined }));
-    setAttachmentPreview(null);
-    setFileSizeWarning(null);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      processFiles(files);
+    }
+    // Reset input to allow selecting same files again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signIn();
-      toast.success('Connected to Google Drive');
-    } catch {
-      toast.error('Failed to connect to Google Drive');
+  // Set up paste event listener
+  useEffect(() => {
+    const handlePaste = async (e: Event) => {
+      const clipboardEvent = e as ClipboardEvent;
+
+      // Check if clipboard contains image data
+      const items = clipboardEvent.clipboardData?.items;
+      if (!items) return;
+
+      // Find image item in clipboard
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        
+        // Handle images (screenshots, copied images)
+        if (item.type.indexOf('image') !== -1) {
+          clipboardEvent.preventDefault();
+          
+          const blob = item.getAsFile();
+          if (!blob) return;
+
+          // Create a File object from the blob
+          const file = new File(
+            [blob],
+            `screenshot-${Date.now()}.png`,
+            { type: blob.type || 'image/png' }
+          );
+
+          toast.success('📸 Screenshot pasted!');
+          processFiles([file]);
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+    };
+  }, []);
+
+  const removeAttachment = (fileToRemove: File) => {
+    const fileId = `${fileToRemove.name}-${fileToRemove.size}-${fileToRemove.lastModified}`;
+    
+    // Remove file from form data
+    setFormData(prev => ({
+      ...prev,
+      attachmentFiles: (prev.attachmentFiles || []).filter(f => f !== fileToRemove)
+    }));
+
+    // Revoke preview URL and remove from map
+    const previewUrl = attachmentPreviews.get(fileId);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    const newPreviews = new Map(attachmentPreviews);
+    newPreviews.delete(fileId);
+    setAttachmentPreviews(newPreviews);
+
+    // Revalidate total size
+    const remainingFiles = (formData.attachmentFiles || []).filter(f => f !== fileToRemove);
+    if (remainingFiles.length === 0) {
+      setFileSizeWarning(null);
+    } else {
+      const validation = validateTotalFileSize(remainingFiles);
+      if (validation.warning) {
+        setFileSizeWarning(validation.message!);
+      } else {
+        setFileSizeWarning(null);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate Google Drive connection
-    if (!isSignedIn) {
-      toast.error('Please connect to Google Drive first');
-      return;
-    }
 
     if (!formData.actionable) {
       toast.error('Please select an actionable');
@@ -117,8 +186,8 @@ export default function SubmitPage() {
       return;
     }
 
-    if (!formData.attachmentFile) {
-      toast.error('Please attach a file');
+    if (!formData.attachmentFiles || formData.attachmentFiles.length === 0) {
+      toast.error('Please attach at least one file');
       return;
     }
 
@@ -147,15 +216,18 @@ export default function SubmitPage() {
   };
 
   const handleSubmitAnother = () => {
+    // Revoke all preview URLs
+    attachmentPreviews.forEach(url => URL.revokeObjectURL(url));
+    
     setFormData({
       actionable: '',
       detailedActionable: '',
       lsqLink: '',
       urn: '',
-      attachmentFile: undefined,
+      attachmentFiles: [],
       comments: '',
     });
-    setAttachmentPreview(null);
+    setAttachmentPreviews(new Map());
     setFileSizeWarning(null);
     setSuccess(null);
   };
@@ -197,49 +269,6 @@ export default function SubmitPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Submit Form</h1>
         <p className="text-gray-600">Fill out the form below to submit your request</p>
-      </div>
-
-      {/* Google Drive Connection Card */}
-      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              isSignedIn ? 'bg-green-100' : 'bg-gray-100'
-            }`}>
-              <svg className={`w-5 h-5 ${isSignedIn ? 'text-green-600' : 'text-gray-400'}`} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12c6.627 0 12-5.373 12-12S18.627 0 12 0zm.14 19.018c-3.868 0-7-3.14-7-7.018 0-3.878 3.132-7.018 7-7.018 1.89 0 3.47.697 4.682 1.829l-1.974 1.978v-.004c-.735-.702-1.667-1.062-2.708-1.062-2.31 0-4.187 1.956-4.187 4.273 0 2.315 1.877 4.277 4.187 4.277 2.096 0 3.522-1.202 3.816-2.852H12.14v-2.737h6.585c.088.47.135.96.135 1.474 0 4.01-2.677 6.86-6.72 6.86z"/>
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">
-                {isSignedIn ? 'Connected to Google Drive' : 'Google Drive Connection Required'}
-              </p>
-              <p className="text-sm text-gray-500">
-                {isSignedIn ? 'Files will be uploaded to your Drive' : 'Connect to upload attachments'}
-              </p>
-            </div>
-          </div>
-
-          {!isSignedIn && (
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {isGoogleLoading ? 'Connecting...' : 'Connect'}
-            </button>
-          )}
-
-          {isSignedIn && (
-            <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-              Connected
-            </span>
-          )}
-        </div>
-
-        {googleError && (
-          <p className="mt-2 text-sm text-red-600">{googleError}</p>
-        )}
       </div>
 
       {/* Form Card */}
@@ -316,27 +345,74 @@ export default function SubmitPage() {
             />
           </div>
 
-          {/* Attachment */}
+          {/* Attachments */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Attachment <span className="text-red-500">*</span>
+              Attachments <span className="text-red-500">*</span>
             </label>
-            {attachmentPreview ? (
-              <div className="relative">
-                <div className="p-4 border-2 border-gray-300 rounded-lg bg-gray-50">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-gray-700 font-medium">{formData.attachmentFile?.name}</p>
-                    <span className="text-xs text-gray-500">
-                      {formData.attachmentFile && formatFileSize(formData.attachmentFile.size)}
+            
+            {/* File List */}
+            {formData.attachmentFiles && formData.attachmentFiles.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {formData.attachmentFiles.map((file) => {
+                  const fileId = `${file.name}-${file.size}-${file.lastModified}`;
+                  const previewUrl = attachmentPreviews.get(fileId);
+                  const isImage = file.type.startsWith('image/');
+                  const isVideo = file.type.startsWith('video/');
+                  
+                  return (
+                    <div key={fileId} className="relative p-4 border-2 border-gray-300 rounded-lg bg-gray-50">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            {isImage && <span className="text-xl">📄</span>}
+                            {isVideo && <span className="text-xl">🎥</span>}
+                            {!isImage && !isVideo && <span className="text-xl">📎</span>}
+                            <p className="text-sm text-gray-700 font-medium truncate">{file.name}</p>
+                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                              {formatFileSize(file.size)}
+                            </span>
+                          </div>
+                          {previewUrl && isImage && (
+                            <img
+                              src={previewUrl}
+                              alt={file.name}
+                              className="max-h-32 rounded-lg"
+                            />
+                          )}
+                          {previewUrl && isVideo && (
+                            <video
+                              src={previewUrl}
+                              controls
+                              className="max-h-32 rounded-lg w-full"
+                            >
+                              Your browser does not support video playback.
+                            </video>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(file)}
+                          className="flex-shrink-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                          title="Remove file"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Total Size and Warning */}
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">Total Size:</span>
+                    <span className="text-sm text-gray-600">
+                      {formatFileSize(
+                        formData.attachmentFiles.reduce((sum, f) => sum + f.size, 0)
+                      )} / 200 MB
                     </span>
                   </div>
-                  {formData.attachmentFile?.type.startsWith('image/') && (
-                    <img
-                      src={attachmentPreview}
-                      alt="Preview"
-                      className="max-h-48 rounded-lg"
-                    />
-                  )}
                   {fileSizeWarning && (
                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-800 flex items-center gap-1">
@@ -345,37 +421,37 @@ export default function SubmitPage() {
                     </div>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={removeAttachment}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                >
-                  ×
-                </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={!isSignedIn}
-                className="w-full p-8 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <p className="text-sm text-gray-600">
-                  {isSignedIn ? 'Click to upload or drag and drop' : 'Connect to Google Drive first'}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">PNG, JPG, PDF up to 200MB (warning at 100MB)</p>
-              </button>
             )}
+
+            {/* Upload Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full p-8 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-gray-400 hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p className="text-sm text-gray-600">
+                Click to upload multiple files, drag and drop, or paste (Ctrl/Cmd+V)
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Images, Videos, PDFs - Total limit: 200MB (warning at 100MB)
+              </p>
+              <p className="text-xs text-blue-600 mt-1 font-medium">
+                💡 Tip: Take a screenshot and paste it here (Ctrl+V / Cmd+V)
+              </p>
+            </button>
+            
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*,.pdf"
+              accept="image/*,video/*,.pdf"
+              multiple
               onChange={handleFileChange}
               className="hidden"
-              required={!attachmentPreview}
+              required={!formData.attachmentFiles || formData.attachmentFiles.length === 0}
             />
           </div>
 
@@ -383,7 +459,7 @@ export default function SubmitPage() {
           {uploadProgress && (
             <div className="p-4 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-blue-700">Uploading to Google Drive...</span>
+                <span className="text-sm font-medium text-blue-700">Uploading file...</span>
                 <span className="text-sm text-blue-600">{uploadProgress.percentage}%</span>
               </div>
               <div className="w-full bg-blue-200 rounded-full h-2">
@@ -417,7 +493,7 @@ export default function SubmitPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitting || !isSignedIn}
+            disabled={isSubmitting}
             className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? (uploadProgress ? 'Uploading...' : 'Submitting...') : 'Submit'}

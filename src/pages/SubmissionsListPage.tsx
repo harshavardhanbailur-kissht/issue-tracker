@@ -36,12 +36,16 @@ export default function SubmissionsListPage() {
   const filteredSubmissions = submissions.filter(submission => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
-    return (
-      submission.id.toLowerCase().includes(query) ||
-      submission.actionable.toLowerCase().includes(query) ||
-      submission.urn.toLowerCase().includes(query) ||
-      submission.detailedActionable.toLowerCase().includes(query)
-    );
+    const searchableText = [
+      submission.id,
+      submission.actionable || '',
+      submission.issueType || '',
+      submission.urn || '',
+      submission.opportunityId || '',
+      submission.detailedActionable || '',
+      submission.name || '',
+    ].join(' ').toLowerCase();
+    return searchableText.includes(query);
   });
 
   if (loading) {
@@ -118,11 +122,45 @@ export default function SubmissionsListPage() {
                         <span className="font-mono font-semibold text-blue-600">{submission.id}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{submission.actionable}</div>
-                        <div className="text-sm text-gray-500 line-clamp-1">{submission.detailedActionable}</div>
+                        {submission.formType === 'loan_issue' ? (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium text-gray-900">
+                                {submission.issueType || 'Loan Issue'}
+                              </div>
+                              {((submission.attachments && submission.attachments.length > 0) || submission.attachmentUrl) && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  📎 {submission.attachments ? submission.attachments.length : 1}
+                                </span>
+                              )}
+                            </div>
+                            {submission.subIssue && (
+                              <div className="text-sm text-gray-500 line-clamp-1">Sub: {submission.subIssue}</div>
+                            )}
+                            {submission.actionRequested && (
+                              <div className="text-sm text-gray-500 line-clamp-1">Action: {submission.actionRequested}</div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium text-gray-900">{submission.actionable}</div>
+                              {((submission.attachments && submission.attachments.length > 0) || submission.attachmentUrl) && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  📎 {submission.attachments ? submission.attachments.length : 1}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-500 line-clamp-1">{submission.detailedActionable}</div>
+                          </>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{submission.urn}</span>
+                        <span className="text-sm text-gray-900">
+                          {submission.formType === 'loan_issue' 
+                            ? (submission.opportunityId || submission.urn || '-')
+                            : submission.urn}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-500">{timeAgo}</span>

@@ -190,6 +190,15 @@ export function authenticateGoogleDrive(): Promise<string> {
         return;
       }
 
+      // Debug logging to identify redirect URI issues
+      console.log('[Google Drive Auth] Current origin:', window.location.origin);
+      console.log('[Google Drive Auth] Full URL:', window.location.href);
+      console.log('[Google Drive Auth] Client ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+      console.log('[Google Drive Auth] Expected redirect URI:', window.location.origin);
+      console.log('[Google Drive Auth] Make sure this exact URL is in Google Cloud Console:');
+      console.log('[Google Drive Auth] - Authorized JavaScript origins');
+      console.log('[Google Drive Auth] - Authorized redirect URIs');
+
       // Request new token
       client.requestAccessToken({ prompt: '' });
     } catch (error) {

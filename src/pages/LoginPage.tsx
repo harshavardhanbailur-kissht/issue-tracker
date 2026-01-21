@@ -37,6 +37,8 @@ export default function LoginPage() {
       // Redirect based on role
       if (selectedRole === 'product_support') {
         navigate('/submit');
+      } else if (selectedRole === 'sm') {
+        navigate('/loan-issue');
       } else {
         navigate('/submissions');
       }
@@ -67,7 +69,7 @@ export default function LoginPage() {
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Select your role
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => handleRoleSelect('product_support')}
@@ -96,6 +98,21 @@ export default function LoginPage() {
                 >
                   <div className="font-semibold text-gray-900 mb-1">Tech Support Team</div>
                   <div className="text-xs text-gray-500">View submissions</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRoleSelect('sm')}
+                  className={`
+                    p-4 rounded-xl border-2 transition-all text-left
+                    ${selectedRole === 'sm'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <div className="font-semibold text-gray-900 mb-1">SM</div>
+                  <div className="text-xs text-gray-500">Loan issue form</div>
                 </button>
               </div>
             </div>
@@ -136,7 +153,7 @@ export default function LoginPage() {
 
         {/* Footer Note */}
         <p className="text-center text-sm text-gray-500 mt-6">
-          Password: 1111 (for both roles)
+          Password: 1111 (for all roles)
         </p>
       </div>
     </div>

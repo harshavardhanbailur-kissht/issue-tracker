@@ -1,10 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { SimpleAuthProvider, useSimpleAuth } from '@/contexts/SimpleAuthContext';
-import { GoogleDriveProvider } from '@/contexts/GoogleDriveContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Layout } from '@/components/Layout';
 import LoginPage from '@/pages/LoginPage';
 import SubmitPage from '@/pages/SubmitPage';
+import LoanIssueFormPage from '@/pages/LoanIssueFormPage';
 import SubmissionsListPage from '@/pages/SubmissionsListPage';
 import SubmissionDetailPage from '@/pages/SubmissionDetailPage';
 
@@ -29,9 +29,20 @@ function AppRoutes() {
       />
 
       <Route
+        path="/loan-issue"
+        element={
+          <ProtectedRoute allowedRoles={['sm']}>
+            <Layout>
+              <LoanIssueFormPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/submissions"
         element={
-          <ProtectedRoute allowedRoles={['tech_support_team']}>
+          <ProtectedRoute allowedRoles={['product_support', 'tech_support_team']}>
             <Layout>
               <SubmissionsListPage />
             </Layout>
@@ -42,7 +53,7 @@ function AppRoutes() {
       <Route
         path="/submissions/:id"
         element={
-          <ProtectedRoute allowedRoles={['tech_support_team']}>
+          <ProtectedRoute allowedRoles={['product_support', 'tech_support_team']}>
             <Layout>
               <SubmissionDetailPage />
             </Layout>
@@ -57,6 +68,8 @@ function AppRoutes() {
           isAuthenticated ? (
             role === 'product_support' ? (
               <Navigate to="/submit" replace />
+            ) : role === 'sm' ? (
+              <Navigate to="/loan-issue" replace />
             ) : (
               <Navigate to="/submissions" replace />
             )
@@ -75,9 +88,7 @@ function AppRoutes() {
 function App() {
   return (
     <SimpleAuthProvider>
-      <GoogleDriveProvider>
-        <AppRoutes />
-      </GoogleDriveProvider>
+      <AppRoutes />
     </SimpleAuthProvider>
   );
 }

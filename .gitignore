@@ -28,3 +28,6 @@ dist-ssr
 .env.local
 .env.production
 .vercel
+functions/service-account-key.json
+functions/lib
+functions/node_modules

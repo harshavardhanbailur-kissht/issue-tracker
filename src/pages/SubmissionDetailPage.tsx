@@ -107,21 +107,140 @@ export default function SubmissionDetailPage() {
           </div>
         </div>
 
-        {/* Actionable */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Actionable</label>
-          <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-gray-900">{submission.actionable}</p>
+        {/* Form Type Indicator */}
+        {submission.formType === 'loan_issue' && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm font-medium text-blue-900">📋 Loan Issue Form Submission</p>
           </div>
-        </div>
+        )}
 
-        {/* Detailed Actionable */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Actionable</label>
-          <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-gray-900 whitespace-pre-wrap">{submission.detailedActionable}</p>
-          </div>
-        </div>
+        {/* Loan Issue Form Fields */}
+        {submission.formType === 'loan_issue' ? (
+          <>
+            {/* Entity */}
+            {submission.entity && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Entity</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900">{submission.entity}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Issue Type */}
+            {submission.issueType && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Issue Type</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900">{submission.issueType}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-Issue */}
+            {submission.subIssue && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sub-Issue</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900">{submission.subIssue}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Action Requested */}
+            {submission.actionRequested && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Action Requested</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900">{submission.actionRequested}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Recommended Action (Decision Tree Result) */}
+            {submission.recommendedAction && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Recommended Action (Decision Tree)</label>
+                <div className="px-4 py-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">{submission.recommendedAction}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Reason */}
+            {submission.reason && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900">{submission.reason}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Next Steps */}
+            {submission.nextSteps && submission.nextSteps.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Next Steps</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <ul className="list-disc list-inside space-y-1">
+                    {submission.nextSteps.map((step, idx) => (
+                      <li key={idx} className="text-gray-900">{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Opportunity ID */}
+            {submission.opportunityId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Opportunity ID</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900 font-mono">{submission.opportunityId}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Name */}
+            {submission.name && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Applicant/Co-Applicant Name</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900">{submission.name}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Date */}
+            {submission.date && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900">{submission.date}</p>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Standard Form Fields */}
+            {/* Actionable */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Actionable</label>
+              <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-900">{submission.actionable}</p>
+              </div>
+            </div>
+
+            {/* Detailed Actionable */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Actionable</label>
+              <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-900 whitespace-pre-wrap">{submission.detailedActionable}</p>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* LSQ Link */}
         <div>
@@ -146,37 +265,71 @@ export default function SubmissionDetailPage() {
           </div>
         </div>
 
-        {/* Attachment */}
-        {submission.attachmentUrl && (
+        {/* Attachments */}
+        {(submission.attachments && submission.attachments.length > 0) || submission.attachmentUrl ? (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Attachment</label>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-              <a
-                href={submission.attachmentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12c6.627 0 12-5.373 12-12S18.627 0 12 0zm.14 19.018c-3.868 0-7-3.14-7-7.018 0-3.878 3.132-7.018 7-7.018 1.89 0 3.47.697 4.682 1.829l-1.974 1.978v-.004c-.735-.702-1.667-1.062-2.708-1.062-2.31 0-4.187 1.956-4.187 4.273 0 2.315 1.877 4.277 4.187 4.277 2.096 0 3.522-1.202 3.816-2.852H12.14v-2.737h6.585c.088.47.135.96.135 1.474 0 4.01-2.677 6.86-6.72 6.86z"/>
-                </svg>
-                {submission.attachmentUrl.includes('drive.google.com') ? 'View in Google Drive' : 'View Attachment'}
-              </a>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {submission.attachments && submission.attachments.length > 1 ? 'Attachments' : 'Attachment'}
+            </label>
+            <div className="space-y-3">
+              {/* Multiple attachments (new format) */}
+              {submission.attachments && submission.attachments.length > 0 ? (
+                submission.attachments.map((attachment, index) => (
+                  <div key={attachment.driveId || index} className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{attachment.fileName}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {attachment.fileSize ? `${(attachment.fileSize / (1024 * 1024)).toFixed(2)} MB` : ''}
+                        </p>
+                      </div>
+                      <a
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex-shrink-0"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12c6.627 0 12-5.373 12-12S18.627 0 12 0zm.14 19.018c-3.868 0-7-3.14-7-7.018 0-3.878 3.132-7.018 7-7.018 1.89 0 3.47.697 4.682 1.829l-1.974 1.978v-.004c-.735-.702-1.667-1.062-2.708-1.062-2.31 0-4.187 1.956-4.187 4.273 0 2.315 1.877 4.277 4.187 4.277 2.096 0 3.522-1.202 3.816-2.852H12.14v-2.737h6.585c.088.47.135.96.135 1.474 0 4.01-2.677 6.86-6.72 6.86z"/>
+                        </svg>
+                        View in Google Drive
+                      </a>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                /* Single attachment (backward compatibility) */
+                submission.attachmentUrl && (
+                  <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <a
+                      href={submission.attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12c6.627 0 12-5.373 12-12S18.627 0 12 0zm.14 19.018c-3.868 0-7-3.14-7-7.018 0-3.878 3.132-7.018 7-7.018 1.89 0 3.47.697 4.682 1.829l-1.974 1.978v-.004c-.735-.702-1.667-1.062-2.708-1.062-2.31 0-4.187 1.956-4.187 4.273 0 2.315 1.877 4.277 4.187 4.277 2.096 0 3.522-1.202 3.816-2.852H12.14v-2.737h6.585c.088.47.135.96.135 1.474 0 4.01-2.677 6.86-6.72 6.86z"/>
+                      </svg>
+                      {submission.attachmentUrl.includes('drive.google.com') ? 'View in Google Drive' : 'View Attachment'}
+                    </a>
 
-              {/* Inline preview for images (only for Firebase Storage URLs, not Google Drive) */}
-              {!submission.attachmentUrl.includes('drive.google.com') && 
-               submission.attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
-                <div className="mt-4">
-                  <img
-                    src={submission.attachmentUrl}
-                    alt="Attachment"
-                    className="max-w-full max-h-96 rounded-lg border border-gray-200"
-                  />
-                </div>
+                    {/* Inline preview for images (only for Firebase Storage URLs, not Google Drive) */}
+                    {!submission.attachmentUrl.includes('drive.google.com') && 
+                     submission.attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
+                      <div className="mt-4">
+                        <img
+                          src={submission.attachmentUrl}
+                          alt="Attachment"
+                          className="max-w-full max-h-96 rounded-lg border border-gray-200"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
               )}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Comments/Remarks */}
         {submission.comments && (

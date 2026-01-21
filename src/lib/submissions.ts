@@ -11,8 +11,8 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { uploadFileToDrive, type UploadProgress } from './googleDrive';
-import type { Submission, SubmissionFormData, UserRole } from '@/types';
+import { uploadFileToDrive, type UploadProgress } from './driveUpload';
+import type { Submission, SubmissionFormData, LoanIssueFormData, UserRole, Attachment } from '@/types';
 
 const SUBMISSIONS_COLLECTION = 'submissions';
 const COUNTERS_COLLECTION = 'counters';
@@ -51,18 +51,54 @@ export async function createSubmission(
   // Generate submission ID first (needed for folder name)
   const submissionId = await generateSubmissionId();
   
-  // Upload attachment to Google Drive if provided
+  // Upload attachments to Google Drive if provided
   let attachmentUrl: string | undefined;
   let attachmentDriveId: string | undefined;
+  let attachments: Attachment[] | undefined;
   
-  if (data.attachmentFile) {
-    const uploadResult = await uploadFileToDrive(
-      data.attachmentFile,
-      submissionId,
-      onUploadProgress
-    );
-    attachmentUrl = uploadResult.shareableUrl;
-    attachmentDriveId = uploadResult.fileId;
+  // Handle multiple files (new) or single file (backward compatibility)
+  const filesToUpload = data.attachmentFiles || (data.attachmentFile ? [data.attachmentFile] : []);
+  
+  if (filesToUpload.length > 0) {
+    attachments = [];
+    
+    // Upload all files sequentially
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      
+      // Calculate progress for this file
+      const fileProgress = onUploadProgress ? (progress: UploadProgress) => {
+        // Calculate overall progress across all files
+        const totalSize = filesToUpload.reduce((sum, f) => sum + f.size, 0);
+        const uploadedSoFar = filesToUpload.slice(0, i).reduce((sum, f) => sum + f.size, 0);
+        const currentFileProgress = (uploadedSoFar + progress.loaded) / totalSize;
+        
+        onUploadProgress({
+          loaded: uploadedSoFar + progress.loaded,
+          total: totalSize,
+          percentage: Math.round(currentFileProgress * 100),
+        });
+      } : undefined;
+      
+      const uploadResult = await uploadFileToDrive(
+        file,
+        submissionId,
+        fileProgress
+      );
+      
+      attachments.push({
+        url: uploadResult.shareableUrl,
+        driveId: uploadResult.fileId,
+        fileName: file.name,
+        fileSize: file.size,
+      });
+      
+      // Set first file as legacy fields for backward compatibility
+      if (i === 0) {
+        attachmentUrl = uploadResult.shareableUrl;
+        attachmentDriveId = uploadResult.fileId;
+      }
+    }
   }
   
   // Create submission document
@@ -77,7 +113,106 @@ export async function createSubmission(
     urn: data.urn,
     attachmentUrl,
     attachmentDriveId,
+    attachments,
     comments: data.comments,
+    submittedBy: role,
+    createdAt: serverTimestamp(),
+    submittedAt: serverTimestamp(),
+  };
+  
+  const docRef = doc(db, SUBMISSIONS_COLLECTION, submissionId);
+  await setDoc(docRef, submissionData);
+  
+  return submissionId;
+}
+
+/**
+ * Create a new loan issue submission with Google Drive upload
+ */
+export async function createLoanIssueSubmission(
+  data: LoanIssueFormData,
+  role: UserRole,
+  decisionResult: { recommendedAction: string; reason: string; nextSteps: string[] },
+  onUploadProgress?: (progress: UploadProgress) => void
+): Promise<string> {
+  // Generate submission ID first (needed for folder name)
+  const submissionId = await generateSubmissionId();
+  
+  // Upload attachments to Google Drive if provided
+  let attachmentUrl: string | undefined;
+  let attachmentDriveId: string | undefined;
+  let attachments: Attachment[] | undefined;
+  
+  // Handle multiple files (new) or single file (backward compatibility)
+  const filesToUpload = data.attachmentFiles || (data.attachmentFile ? [data.attachmentFile] : []);
+  
+  if (filesToUpload.length > 0) {
+    attachments = [];
+    
+    // Upload all files sequentially
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      
+      // Calculate progress for this file
+      const fileProgress = onUploadProgress ? (progress: UploadProgress) => {
+        // Calculate overall progress across all files
+        const totalSize = filesToUpload.reduce((sum, f) => sum + f.size, 0);
+        const uploadedSoFar = filesToUpload.slice(0, i).reduce((sum, f) => sum + f.size, 0);
+        const currentFileProgress = (uploadedSoFar + progress.loaded) / totalSize;
+        
+        onUploadProgress({
+          loaded: uploadedSoFar + progress.loaded,
+          total: totalSize,
+          percentage: Math.round(currentFileProgress * 100),
+        });
+      } : undefined;
+      
+      const uploadResult = await uploadFileToDrive(
+        file,
+        submissionId,
+        fileProgress
+      );
+      
+      attachments.push({
+        url: uploadResult.shareableUrl,
+        driveId: uploadResult.fileId,
+        fileName: file.name,
+        fileSize: file.size,
+      });
+      
+      // Set first file as legacy fields for backward compatibility
+      if (i === 0) {
+        attachmentUrl = uploadResult.shareableUrl;
+        attachmentDriveId = uploadResult.fileId;
+      }
+    }
+  }
+  
+  // Create submission document with loan issue form data
+  const submissionData: Omit<Submission, 'createdAt' | 'submittedAt'> & { 
+    createdAt: ReturnType<typeof serverTimestamp>;
+    submittedAt: ReturnType<typeof serverTimestamp>;
+  } = {
+    id: submissionId,
+    formType: 'loan_issue',
+    actionable: data.issueType, // Set actionable to issueType for display in list
+    entity: data.entity,
+    issueType: data.issueType,
+    subIssue: data.subIssue,
+    actionRequested: data.actionRequested,
+    opportunityId: data.opportunityId,
+    lsqLink: data.lsqUrl,
+    urn: data.opportunityId, // Using opportunity ID as URN for loan issue forms
+    name: data.name,
+    date: data.date,
+    detailedActionable: data.notes || '', // Using notes as detailed actionable
+    attachmentUrl,
+    attachmentDriveId,
+    attachments,
+    comments: data.notes,
+    recommendedAction: decisionResult.recommendedAction,
+    reason: decisionResult.reason,
+    nextSteps: decisionResult.nextSteps,
     submittedBy: role,
     createdAt: serverTimestamp(),
     submittedAt: serverTimestamp(),

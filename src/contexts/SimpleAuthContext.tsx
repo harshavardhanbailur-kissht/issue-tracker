@@ -24,7 +24,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try {
         const { role: storedRole } = JSON.parse(stored);
-        if (storedRole === 'product_support' || storedRole === 'tech_support_team') {
+        if (storedRole === 'product_support' || storedRole === 'tech_support_team' || storedRole === 'sm') {
           setRole(storedRole);
           setIsAuthenticated(true);
         }
@@ -37,6 +37,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (selectedRole: UserRole, password: string): Promise<boolean> => {
+    // All roles use the same password: 1111
     if (password === HARDCODED_PASSWORD) {
       setRole(selectedRole);
       setIsAuthenticated(true);
